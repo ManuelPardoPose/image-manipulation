@@ -102,7 +102,7 @@ mod tests {
     #[test]
     fn test_simple_data() {
         let input_image =
-            ImageReader::open("sample_images/concrete-shapes-free-image-2048x1365.png")
+            ImageReader::open("sample_images/concrete-shapes-free-image-2048x1365.jpg")
                 .unwrap()
                 .decode()
                 .unwrap()
@@ -118,7 +118,7 @@ mod tests {
     #[test]
     fn test_more_complex_data() {
         let input_image =
-            ImageReader::open("sample_images/concrete-shapes-free-image-2048x1365.png")
+            ImageReader::open("sample_images/concrete-shapes-free-image-2048x1365.jpg")
                 .unwrap()
                 .decode()
                 .unwrap()
@@ -134,7 +134,7 @@ mod tests {
     #[test]
     fn test_max_data() {
         let input_image =
-            ImageReader::open("sample_images/concrete-shapes-free-image-2048x1365.png")
+            ImageReader::open("sample_images/concrete-shapes-free-image-2048x1365.jpg")
                 .unwrap()
                 .decode()
                 .unwrap()
