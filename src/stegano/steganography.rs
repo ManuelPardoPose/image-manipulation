@@ -1,10 +1,23 @@
+use std::fmt;
+
 use image::{ImageBuffer, Rgba};
+
+#[derive(Debug, Clone)]
+pub struct DataLengthError;
+
+type Result<T> = std::result::Result<T, DataLengthError>;
+
+impl fmt::Display for DataLengthError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "The data is to long to be encoded into the given image")
+    }
+}
 
 pub trait Encode {
     fn encode(
-        message: &str,
+        data: &str,
         image_buffer: ImageBuffer<Rgba<u8>, Vec<u8>>,
-    ) -> ImageBuffer<Rgba<u8>, Vec<u8>>;
+    ) -> Result<ImageBuffer<Rgba<u8>, Vec<u8>>>;
 }
 
 pub trait Decode {
@@ -13,82 +26,70 @@ pub trait Decode {
 
 pub struct DefaultSteganoGrapher {}
 
+const HEADER_FIELD_SIZE: usize = 32;
+
 impl Encode for DefaultSteganoGrapher {
     fn encode(
-        message: &str,
+        data: &str,
         mut image_buffer: ImageBuffer<Rgba<u8>, Vec<u8>>,
-    ) -> ImageBuffer<Rgba<u8>, Vec<u8>> {
-        let message_bytes = message.as_bytes();
-        let message_bytes_len = message_bytes.len();
-        let message_bit_len = message_bytes_len * 8;
-        let mut bit_pointer: usize = 0;
-
-        for x in 0..image_buffer.width() {
-            for y in 0..image_buffer.height() {
-                if x == 0 && y == 0 {
-                    let len_encoded_to_rgb: [u8; 4] = [
-                        (message_bytes_len / (255 * 255 * 255) % 255) as u8,
-                        (message_bytes_len / (255 * 255) % 255) as u8,
-                        (message_bytes_len / 255 % 255) as u8,
-                        (message_bytes_len % 255) as u8,
-                    ];
-                    image_buffer.put_pixel(x, y, Rgba(len_encoded_to_rgb));
-                    continue;
-                }
-
-                if bit_pointer >= message_bit_len {
-                    return image_buffer;
-                }
-
-                let pixel = image_buffer.get_pixel(x, y).0;
-                let (mut r, g, b, a) = (pixel[0], pixel[1], pixel[2], pixel[3]);
-                r -= r % 2;
-                let byte = message_bytes[bit_pointer / 8];
-                let bit = (byte >> (bit_pointer % 8)) % 2;
-                image_buffer.put_pixel(x, y, Rgba([r + bit, g, b, a]));
-
-                bit_pointer += 1;
-            }
+    ) -> Result<ImageBuffer<Rgba<u8>, Vec<u8>>> {
+        let data_bytes = data.as_bytes();
+        let data_bytes_len = data_bytes.len();
+        let data_bit_len = data_bytes_len * 8;
+        // TODO: check for data length and compare with image pixel array length
+        // TODO: add Encode Error or something like that
+        if data_bit_len >= image_buffer.len() {
+            return Err(DataLengthError);
         }
-        image_buffer
+
+        for (idx, val) in image_buffer.iter_mut().enumerate() {
+            if idx >= HEADER_FIELD_SIZE + data_bit_len {
+                break;
+            }
+            *val &= !1; // make even
+
+            let bit: u8 = if idx < HEADER_FIELD_SIZE {
+                (data_bytes_len >> idx) as u8 & 1
+            } else {
+                let data_idx = idx - HEADER_FIELD_SIZE;
+                let byte = data_bytes[data_idx / 8];
+                (byte >> (data_idx % 8)) & 1
+            };
+            *val += bit;
+        }
+        Ok(image_buffer)
     }
 }
 
 impl Decode for DefaultSteganoGrapher {
     fn decode(image_buffer: ImageBuffer<Rgba<u8>, Vec<u8>>) -> String {
-        let mut message_bytes: Vec<u8> = Vec::new();
-        let mut message_bytes_len: usize;
-        let mut message_bit_len: usize = 0;
-        let mut bit_pointer: usize = 0;
+        let mut data_bytes: Vec<u8> = Vec::new();
+        let mut data_bytes_len: usize = 0;
+        let mut data_bit_len: usize = 0;
         let mut curr_byte_buffer: u8 = 0;
 
-        for x in 0..image_buffer.width() {
-            for y in 0..image_buffer.height() {
-                let pixel = image_buffer.get_pixel(x, y).0;
-                let (r, g, b, a) = (pixel[0], pixel[1], pixel[2], pixel[3]);
-                if x == 0 && y == 0 {
-                    message_bytes_len = (r as u32 * 255 * 255 * 255
-                        + g as u32 * 255 * 255
-                        + b as u32 * 255
-                        + a as u32) as usize;
-                    message_bit_len = message_bytes_len * 8;
-                    message_bytes = Vec::with_capacity(message_bytes_len);
-                    continue;
-                }
+        for (idx, val) in image_buffer.iter().enumerate() {
+            if idx >= HEADER_FIELD_SIZE + data_bit_len {
+                break;
+            }
 
-                if bit_pointer >= message_bit_len {
-                    return String::from_utf8(message_bytes).unwrap_or(String::from("Not UTF8"));
+            if idx < HEADER_FIELD_SIZE {
+                let bit = (*val as usize & 1) << (idx);
+                data_bytes_len += bit;
+                if idx + 1 == HEADER_FIELD_SIZE {
+                    data_bit_len = data_bytes_len * 8;
+                    data_bytes = Vec::with_capacity(data_bytes_len);
                 }
-
-                let bit = (r % 2) << (bit_pointer % 8);
+            } else {
+                let data_idx = idx - HEADER_FIELD_SIZE;
+                let bit = (*val & 1) << (data_idx % 8);
                 curr_byte_buffer += bit;
-                bit_pointer += 1;
-                if bit_pointer % 8 == 0 {
-                    message_bytes.push(curr_byte_buffer);
+                if (data_idx + 1) % 8 == 0 {
+                    data_bytes.push(curr_byte_buffer);
                     curr_byte_buffer = 0;
                 }
             }
         }
-        String::from_utf8(message_bytes).unwrap_or(String::from("Not UTF8"))
+        String::from_utf8(data_bytes).unwrap_or(String::from("Not UTF8"))
     }
 }

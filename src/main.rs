@@ -65,7 +65,13 @@ fn encode(inpath: &str, data: &str) {
             return;
         }
     };
-    img = DefaultSteganoGrapher::encode(data, img);
+    img = match DefaultSteganoGrapher::encode(data, img) {
+        Ok(img) => img,
+        Err(e) => {
+            println!("Error: {e}");
+            return;
+        }
+    };
     let outpath = inpath.replace(".jpg", ".png").replace(".png", "-e.png");
     if let Err(e) = img.save(outpath) {
         println!("{FILE_SAVING_ERROR}\n{e}");
