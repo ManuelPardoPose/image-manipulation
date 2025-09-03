@@ -15,7 +15,7 @@ impl fmt::Display for DataLengthError {
 
 pub trait Encode {
     fn encode(
-        data: &str,
+        data: &[u8],
         image_buffer: ImageBuffer<Rgba<u8>, Vec<u8>>,
     ) -> Result<ImageBuffer<Rgba<u8>, Vec<u8>>>;
 }
@@ -30,10 +30,9 @@ const HEADER_FIELD_SIZE: usize = 32;
 
 impl Encode for DefaultSteganoGrapher {
     fn encode(
-        data: &str,
+        data_bytes: &[u8],
         mut image_buffer: ImageBuffer<Rgba<u8>, Vec<u8>>,
     ) -> Result<ImageBuffer<Rgba<u8>, Vec<u8>>> {
-        let data_bytes = data.as_bytes();
         let data_bytes_len = data_bytes.len();
         let data_bit_len = data_bytes_len * 8;
         if data_bit_len > image_buffer.len() - HEADER_FIELD_SIZE {
@@ -108,7 +107,7 @@ mod tests {
                 .unwrap()
                 .into_rgba8();
         let data = "This is a simple Text";
-        let encoded_res = DefaultSteganoGrapher::encode(&data, input_image);
+        let encoded_res = DefaultSteganoGrapher::encode(data.as_bytes(), input_image);
         assert!(encoded_res.is_ok());
         let encoded = encoded_res.unwrap();
         let decoded = DefaultSteganoGrapher::decode(encoded);
@@ -124,7 +123,7 @@ mod tests {
                 .unwrap()
                 .into_rgba8();
         let data = "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla facilisis at vero eros et accumsan et iusto odio dignissim qui blandit praesent luptatum zzril delenit augue duis dolore te feugait nulla facilisi. Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat. Ut wisi enim ad minim veniam, quis nostrud exerci tation ullamcorper suscipit lobortis nisl ut aliquip ex ea commodo consequat. Duis autem vel eum iriure dolor in hendrerit in vulputate velit es 😎";
-        let encoded_res = DefaultSteganoGrapher::encode(&data, input_image);
+        let encoded_res = DefaultSteganoGrapher::encode(data.as_bytes(), input_image);
         assert!(encoded_res.is_ok());
         let encoded = encoded_res.unwrap();
         let decoded = DefaultSteganoGrapher::decode(encoded);
@@ -148,8 +147,10 @@ mod tests {
         invalid_data.push_str("A");
         assert_eq!(valid_data.as_bytes().len(), max_bytes);
         assert!(invalid_data.as_bytes().len() > max_bytes);
-        let encoded_res_valid = DefaultSteganoGrapher::encode(&valid_data, input_image.clone());
-        let encoded_res_invalid = DefaultSteganoGrapher::encode(&invalid_data, input_image);
+        let encoded_res_valid =
+            DefaultSteganoGrapher::encode(valid_data.as_bytes(), input_image.clone());
+        let encoded_res_invalid =
+            DefaultSteganoGrapher::encode(invalid_data.as_bytes(), input_image);
         assert!(
             encoded_res_valid.is_ok(),
             "{:?} should be ok",

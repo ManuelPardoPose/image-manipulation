@@ -83,7 +83,7 @@ fn encode_command(inpath: String, data: String, key: Option<String>) {
             return;
         }
     };
-    img = match DefaultSteganoGrapher::encode(&data, img) {
+    img = match DefaultSteganoGrapher::encode(data.as_bytes(), img) {
         Ok(img) => img,
         Err(e) => {
             println!("Error: {e}");
