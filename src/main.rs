@@ -1,21 +1,22 @@
 use std::io;
 use std::io::Error;
 
-use aes_gcm::AeadCore;
-use aes_gcm::Aes256Gcm;
-use aes_gcm::Key;
-use aes_gcm::KeyInit;
-use aes_gcm::aead::Aead;
-use aes_gcm::aead::OsRng;
+use aes_siv::Aes128SivAead;
+use aes_siv::Key;
+use aes_siv::KeyInit;
+use aes_siv::Nonce;
+use aes_siv::aead::AeadMut;
 use clap::Parser;
 use clap::Subcommand;
 
+use image::EncodableLayout;
 use image::ImageReader;
 use image::RgbaImage;
 use image_manipulation::stegano::steganography::{Decode, DefaultSteganoGrapher, Encode};
 
 const FILE_READING_ERROR: &str = "Error: A problem occured while reading the input file.";
 const FILE_SAVING_ERROR: &str = "Error: A problem occured while saving the output file.";
+const INVALID_KEY_ERROR: &str = "Error: The key should be 32 bytes.";
 
 /// image-manipulation
 /// Can Encode/Decode Data into Images
@@ -67,9 +68,7 @@ fn main() {
             encode_command(inpath, data, key);
         }
         Some(Commands::Decode { inpath, key }) => {
-            if let Some(data) = decode_command(inpath, key) {
-                println!("Decoded Data:\n{data}")
-            }
+            decode_command(inpath, key);
         }
         None => {}
     }
@@ -83,7 +82,21 @@ fn encode_command(inpath: String, data: String, key: Option<String>) {
             return;
         }
     };
-    img = match DefaultSteganoGrapher::encode(data.as_bytes(), img) {
+    let data = if let Some(key) = key {
+        let key_bytes = key.as_bytes();
+        if key_bytes.len() != 32 {
+            println!("{INVALID_KEY_ERROR}");
+            return;
+        }
+
+        let key = Key::<Aes128SivAead>::from_slice(key_bytes);
+        let mut cipher = Aes128SivAead::new(key);
+        let nonce = Nonce::from_slice(b"any unique nonce");
+        cipher.encrypt(nonce, data.as_bytes()).unwrap()
+    } else {
+        data.as_bytes().to_vec()
+    };
+    img = match DefaultSteganoGrapher::encode(data, img) {
         Ok(img) => img,
         Err(e) => {
             println!("Error: {e}");
@@ -96,16 +109,31 @@ fn encode_command(inpath: String, data: String, key: Option<String>) {
     };
 }
 
-fn decode_command(inpath: String, key: Option<String>) -> Option<String> {
+fn decode_command(inpath: String, key: Option<String>) {
     let img = match open_image_as_rgba(&inpath) {
         Ok(img) => img,
         Err(e) => {
             println!("{FILE_READING_ERROR}\n{e}");
-            return None;
+            return;
         }
     };
     let data = DefaultSteganoGrapher::decode(img);
-    Some(data)
+    let data = if let Some(key) = key {
+        let key_bytes = key.as_bytes();
+        if key_bytes.len() != 32 {
+            println!("{INVALID_KEY_ERROR}");
+            return;
+        }
+
+        let key = Key::<Aes128SivAead>::from_slice(key_bytes);
+        let mut cipher = Aes128SivAead::new(key);
+        let nonce = Nonce::from_slice(b"any unique nonce");
+        cipher.decrypt(nonce, data.as_bytes()).unwrap()
+    } else {
+        data
+    };
+    let data = String::from_utf8(data).unwrap_or(String::from("Not UTF8"));
+    println!("Decoded Data:\n{data}");
 }
 
 fn open_image_as_rgba(path: &str) -> Result<RgbaImage, Error> {
