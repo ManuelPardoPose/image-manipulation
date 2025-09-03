@@ -17,6 +17,8 @@ use image_manipulation::stegano::steganography::{Decode, DefaultSteganoGrapher, 
 const FILE_READING_ERROR: &str = "Error: A problem occured while reading the input file.";
 const FILE_SAVING_ERROR: &str = "Error: A problem occured while saving the output file.";
 const INVALID_KEY_ERROR: &str = "Error: The key should be 32 bytes.";
+const DECRYPTION_ERROR: &str =
+    "Error: Decryption did not work. Either invalid key or non decryptable file.";
 
 /// image-manipulation
 /// Can Encode/Decode Data into Images
@@ -92,7 +94,12 @@ fn encode_command(inpath: String, data: String, key: Option<String>) {
         let key = Key::<Aes128SivAead>::from_slice(key_bytes);
         let mut cipher = Aes128SivAead::new(key);
         let nonce = Nonce::from_slice(b"any unique nonce");
-        cipher.encrypt(nonce, data.as_bytes()).unwrap()
+        if let Ok(data) = cipher.encrypt(nonce, data.as_bytes()) {
+            data
+        } else {
+            // theoreticall this is not possible
+            return;
+        }
     } else {
         data.as_bytes().to_vec()
     };
@@ -128,7 +135,12 @@ fn decode_command(inpath: String, key: Option<String>) {
         let key = Key::<Aes128SivAead>::from_slice(key_bytes);
         let mut cipher = Aes128SivAead::new(key);
         let nonce = Nonce::from_slice(b"any unique nonce");
-        cipher.decrypt(nonce, data.as_bytes()).unwrap()
+        if let Ok(data) = cipher.decrypt(nonce, data.as_bytes()) {
+            data
+        } else {
+            println!("{DECRYPTION_ERROR}");
+            return;
+        }
     } else {
         data
     };
