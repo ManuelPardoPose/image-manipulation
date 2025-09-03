@@ -62,7 +62,7 @@ enum Commands {
 
 fn main() {
     let args = Args::parse();
-    match &args.command {
+    match args.command {
         Some(Commands::Encode { inpath, data, key }) => {
             encode_command(inpath, data, key);
         }
@@ -75,15 +75,15 @@ fn main() {
     }
 }
 
-fn encode_command(inpath: &str, data: &str, key: &Option<String>) {
-    let mut img = match open_image_as_rgba(inpath) {
+fn encode_command(inpath: String, data: String, key: Option<String>) {
+    let mut img = match open_image_as_rgba(&inpath) {
         Ok(img) => img,
         Err(e) => {
             println!("{FILE_READING_ERROR}\n{e}");
             return;
         }
     };
-    img = match DefaultSteganoGrapher::encode(data, img) {
+    img = match DefaultSteganoGrapher::encode(&data, img) {
         Ok(img) => img,
         Err(e) => {
             println!("Error: {e}");
@@ -96,8 +96,8 @@ fn encode_command(inpath: &str, data: &str, key: &Option<String>) {
     };
 }
 
-fn decode_command(inpath: &str, key: &Option<String>) -> Option<String> {
-    let img = match open_image_as_rgba(inpath) {
+fn decode_command(inpath: String, key: Option<String>) -> Option<String> {
+    let img = match open_image_as_rgba(&inpath) {
         Ok(img) => img,
         Err(e) => {
             println!("{FILE_READING_ERROR}\n{e}");
