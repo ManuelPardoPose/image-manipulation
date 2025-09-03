@@ -41,7 +41,7 @@ enum Commands {
         #[arg()]
         data: String,
 
-        /// Optional AES-GCM-256 key that encrypts the data before encoding
+        /// Optional AES-SIV key that encrypts the data before encoding
         ///
         /// length: 32 byte (256 bit)
         #[arg(short, long)]
@@ -53,7 +53,7 @@ enum Commands {
         #[arg()]
         inpath: String,
 
-        /// Optional AES-GCM-256 key that decrypts the data after encoding
+        /// Optional AES-SIV key that decrypts the data after encoding
         ///
         /// length: 32 byte (256 bit)
         #[arg(short, long)]
