@@ -20,7 +20,6 @@ const INVALID_KEY_ERROR: &str = "Error: The key should be 32 bytes.";
 const DECRYPTION_ERROR: &str =
     "Error: Decryption did not work. Either invalid key or non decryptable file.";
 
-/// image-manipulation
 /// Can Encode/Decode Data into Images
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
