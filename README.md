@@ -2,6 +2,7 @@
 
 ## Current Features:
 - Encode data into an image without the information being visually noticable. You can also pass in a key for simple encryption.
+- CLI and GUI available
 
 ## Installation
 `cargo install --git https://github.com/ManuelPardoPose/image-manipulation.git`
@@ -15,10 +16,12 @@ Usage: image-manipulation [COMMAND]
 Commands:
   encode  Encodes data into an image
   decode  Decodes data from an image
+  gui     Open GUI
   help    Print this message or the help of the given subcommand(s)
 
 Options:
   -h, --help     Print help
+  -V, --version  Print version
 ```
 
 ## Todo
