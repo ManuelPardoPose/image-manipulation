@@ -4,13 +4,14 @@ use iced::Alignment::Center;
 use iced::Length::Fill;
 use iced::alignment::Horizontal::Left;
 use iced::alignment::Vertical::Top;
+use iced::theme::Palette;
 use iced::widget::text_editor::Edit;
 use iced::widget::{button, column, container, image, row, text};
 use iced::widget::{
     text_editor,
     text_editor::{Action, Content},
 };
-use iced::{Element, Theme};
+use iced::{Color, Element, Theme};
 use rfd::FileDialog;
 
 use crate::commands::{decode_command, encode_command};
@@ -22,28 +23,14 @@ pub fn start_gui(title: &'static str) {
 }
 
 fn theme(_: &GUIState) -> Theme {
-    // Theme::Light
-    // Theme::Dark
-    // Theme::Dracula
-    // Theme::Nord
-    // Theme::SolarizedLight
-    // Theme::SolarizedDark
-    // Theme::GruvboxLight
-    // Theme::GruvboxDark
-    // Theme::CatppuccinLatte
-    // Theme::CatppuccinFrappe
-    // Theme::CatppuccinMacchiato
-    // Theme::CatppuccinMocha
-    // Theme::TokyoNight
-    // Theme::TokyoNightStorm
-    // Theme::TokyoNightLight
-    // Theme::KanagawaWave
-    // Theme::KanagawaDragon
-    // Theme::KanagawaLotus
-    // Theme::Moonfly
-    // Theme::Nightfly
-    Theme::Oxocarbon
-    // Theme::Ferra
+    let palette = Palette {
+        background: Color::parse("#3B3736").unwrap(),
+        text: Color::parse("#C3BED0").unwrap(),
+        primary: Color::parse("#C3BED0").unwrap(),
+        success: Color::parse("#5B6B33").unwrap(),
+        danger: Color::parse("#C91C40").unwrap(),
+    };
+    Theme::custom("custom-theme".to_string(), palette)
 }
 
 #[derive(Default)]
@@ -105,7 +92,8 @@ impl GUIState {
                 row![
                     text_editor(&self.text_input)
                         .placeholder("To Encode")
-                        .on_action(Message::EditText),
+                        .on_action(Message::EditText)
+                        .padding(15),
                     button("Encode").on_press(Message::Encode).padding(15),
                     button("Decode").on_press(Message::Decode).padding(15),
                 ]
