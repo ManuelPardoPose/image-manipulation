@@ -9,7 +9,7 @@ use image_manipulation::gui::start_gui;
 #[command(version, about, long_about = None)]
 struct Args {
     #[command(subcommand)]
-    command: Option<Commands>,
+    command: Commands,
 }
 
 #[derive(Subcommand)]
@@ -51,15 +51,14 @@ enum Commands {
 fn main() {
     let args = Args::parse();
     match args.command {
-        Some(Commands::Encode { inpath, data, key }) => {
+        Commands::Encode { inpath, data, key } => {
             encode_command(inpath, data, key);
         }
-        Some(Commands::Decode { inpath, key }) => {
+        Commands::Decode { inpath, key } => {
             let _ = decode_command(inpath, key);
         }
-        Some(Commands::Gui {}) => {
+        Commands::Gui {} => {
             start_gui("image-manipulation-gui");
         }
-        None => {}
     }
 }
