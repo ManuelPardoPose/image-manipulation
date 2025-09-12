@@ -1,8 +1,11 @@
 # image-manipulation
 
-## Current Features:
+## Current Features
 - Encode data into an image without the information being visually noticable. You can also pass in a key for simple encryption.
 - CLI and GUI available
+
+## GUI
+![gui screenshot](sample_images/gui-screenshot.png "GUI Screenshot")
 
 ## Installation
 `cargo install --git https://github.com/ManuelPardoPose/image-manipulation.git`
